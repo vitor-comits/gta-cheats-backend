@@ -9,6 +9,7 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "default-dev-secret-key")
     JSON_SORT_KEYS = False
     MONGODB_URI = os.getenv("MONGODB_URI", "")
+    MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "gta")
 
 
 class DevelopmentConfig(Config):

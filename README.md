@@ -1,41 +1,42 @@
 # GTA Cheats Backend 🎮
 
-Backend em Python / Flask estruturado para fornecer uma API REST com códigos e trapaças da franquia Grand Theft Auto.
+Backend em Python / Flask estruturado para fornecer uma API REST com códigos e trapaças da franquia Grand Theft Auto, integrado ao **MongoDB Atlas** e documentado interativamente via **Swagger UI**.
 
 ## 🚀 Tecnologias
 
 - **Python 3**
 - **Flask**
+- **PyMongo** (MongoDB Atlas)
 - **Flask-CORS**
+- **Flask-Swagger-UI** (OpenAPI 3.0)
 - **Python-dotenv**
-- **Pytest**
 
 ## 📁 Estrutura do Projeto
 
 ```
 gta-cheats-backend/
 ├── app/
-│   ├── __init__.py        # Fábrica da aplicação Flask (Application Factory)
-│   └── routes/
-│       ├── __init__.py
-│       ├── health.py      # Health check (/api/health)
-│       └── cheats.py      # Rotas de cheats (/api/cheats)
-├── tests/
-│   └── test_api.py        # Testes automatizados com Pytest
+│   ├── __init__.py        # Fábrica da aplicação Flask e registro do Swagger UI
+│   ├── db.py              # Gerenciador de conexão com o MongoDB Atlas (banco gta)
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── health.py      # Health check com status do MongoDB (/api/health)
+│   │   └── cheats.py      # Rotas CRUD de cheats no MongoDB (/api/cheats)
+│   └── static/
+│       └── swagger.json   # Especificação OpenAPI 3.0
 ├── .env.example           # Exemplo de variáveis de ambiente
-├── .env                   # Variáveis de ambiente locais
+├── .env                   # Variáveis de ambiente locais (credenciais MongoDB Atlas)
 ├── .gitignore             # Arquivos ignorados pelo Git
-├── config.py              # Classes de configuração (Dev, Prod, Test)
+├── config.py              # Classes de configuração da aplicação
 ├── requirements.txt       # Dependências do projeto
 └── run.py                 # Ponto de entrada da aplicação
 ```
 
 ## 🛠️ Instalação e Execução
 
-### 1. Criar e ativar o ambiente virtual
+### 1. Ativar o ambiente virtual
 
 ```bash
-python3 -m venv .venv
 source .venv/bin/activate
 ```
 
@@ -47,30 +48,44 @@ pip install -r requirements.txt
 
 ### 3. Configurar variáveis de ambiente
 
-Copie o `.env.example` para `.env` caso ainda não exista:
+O arquivo `.env` contém as configurações de conexão:
 
-```bash
-cp .env.example .env
+```env
+FLASK_APP=run.py
+FLASK_ENV=development
+FLASK_DEBUG=1
+PORT=5000
+HOST=0.0.0.0
+MONGODB_URI="mongodb+srv://<usuario>:<senha>@cluster.mongodb.net"
+MONGODB_DB_NAME="gta"
 ```
 
 ### 4. Executar a aplicação
 
 ```bash
-python3 run.py
+python run.py
 ```
 
 A API estará disponível em: `http://localhost:5000`
 
-## 🧪 Executar Testes
+---
 
-```bash
-pytest
-```
+## 📖 Documentação Interativa (Swagger UI)
 
-## 📡 Endpoints Disponíveis
+Acesse a interface interativa do Swagger para testar todas as rotas diretamente pelo navegador:
+
+👉 **`http://localhost:5000/docs`**
+
+A especificação OpenAPI 3.0 bruta pode ser consultada em: `http://localhost:5000/docs/swagger.json`
+
+---
+
+## 📡 Endpoints da API
 
 | Método | Endpoint | Descrição |
 |---|---|---|
-| `GET` | `/api/health` | Status de saúde da aplicação |
+| `GET` | `/api/health` | Status de saúde da aplicação e conectividade com o MongoDB Atlas |
 | `GET` | `/api/cheats` | Lista todos os cheats (suporta filtros `?game=gta-sa` e `?category=vehicles`) |
-| `GET` | `/api/cheats/<id>` | Detalhes de um cheat específico por ID |
+| `POST` | `/api/cheats` | Cadastra um novo cheat na coleção `cheats` do MongoDB |
+| `GET` | `/api/cheats/<id>` | Busca um cheat por ID (`ObjectId` ou `custom_id`) |
+| `DELETE` | `/api/cheats/<id>` | Remove um cheat por ID |

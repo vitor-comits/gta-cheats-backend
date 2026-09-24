@@ -1,0 +1,229 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "GTA Cheats API",
+    "description": "API REST para consulta e gerenciamento de códigos e trapaças da franquia Grand Theft Auto, com persistência no MongoDB Atlas.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Servidor Atual"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Monitoramento e status da API"
+    },
+    {
+      "name": "Cheats",
+      "description": "Operações com códigos de trapaça"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Verifica a saúde da API e conexão com o banco de dados",
+        "responses": {
+          "200": {
+            "description": "API em funcionamento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" },
+                    "service": { "type": "string", "example": "gta-cheats-backend" },
+                    "version": { "type": "string", "example": "1.0.0" },
+                    "database": { "type": "string", "example": "connected" },
+                    "database_name": { "type": "string", "example": "gta" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cheats": {
+      "get": {
+        "tags": ["Cheats"],
+        "summary": "Lista todos os cheats cadastrados com filtros opcionais",
+        "parameters": [
+          {
+            "name": "game",
+            "in": "query",
+            "description": "Filtrar por jogo (ex: gta-sa, gta-v, gta-iv, gta-vc)",
+            "required": false,
+            "schema": { "type": "string", "example": "gta-sa" }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Filtrar por categoria (ex: player, vehicles, weapons, weather)",
+            "required": false,
+            "schema": { "type": "string", "example": "player" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de cheats retornada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": { "type": "integer", "example": 4 },
+                    "cheats": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Cheat" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Cheats"],
+        "summary": "Cadastra um novo cheat no MongoDB",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CheatInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cheat cadastrado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Cheat" }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados de entrada inválidos",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cheats/{id}": {
+      "get": {
+        "tags": ["Cheats"],
+        "summary": "Obtém os detalhes de um cheat pelo ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identificador do cheat (ObjectId do MongoDB ou ID customizado)",
+            "schema": { "type": "string", "example": "66f00112233445566778899a" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cheat encontrado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Cheat" }
+              }
+            }
+          },
+          "404": {
+            "description": "Cheat não encontrado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Cheats"],
+        "summary": "Exclui um cheat pelo ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identificador do cheat a ser excluído",
+            "schema": { "type": "string", "example": "66f00112233445566778899a" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cheat excluído com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Cheat excluído com sucesso" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cheat não encontrado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Cheat": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "66f00112233445566778899a" },
+          "custom_id": { "type": "integer", "example": 1 },
+          "game": { "type": "string", "example": "gta-sa" },
+          "game_name": { "type": "string", "example": "Grand Theft Auto: San Andreas" },
+          "title": { "type": "string", "example": "Saúde, Colete e $250.000" },
+          "code_pc": { "type": "string", "example": "HESOYAM" },
+          "code_playstation": { "type": "string", "example": "R1, R2, L1, X, ..." },
+          "code_xbox": { "type": "string", "example": "RT, RB, LT, A, ..." },
+          "category": { "type": "string", "example": "player" }
+        }
+      },
+      "CheatInput": {
+        "type": "object",
+        "required": ["game", "title"],
+        "properties": {
+          "game": { "type": "string", "example": "gta-sa" },
+          "game_name": { "type": "string", "example": "Grand Theft Auto: San Andreas" },
+          "title": { "type": "string", "example": "Super Salto" },
+          "code_pc": { "type": "string", "example": "KANGAROO" },
+          "code_playstation": { "type": "string", "example": "Cima, Cima, Triângulo, Triângulo, ..." },
+          "code_xbox": { "type": "string", "example": "Cima, Cima, Y, Y, ..." },
+          "category": { "type": "string", "example": "player" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string", "example": "Recurso não encontrado" }
+        }
+      }
+    }
+  }
+}
+
