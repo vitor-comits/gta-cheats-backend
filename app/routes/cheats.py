@@ -61,6 +61,7 @@ def create_cheat():
         "code_pc": data.get("code_pc"),
         "code_playstation": data.get("code_playstation"),
         "code_xbox": data.get("code_xbox"),
+        "code_phone": data.get("code_phone"),
         "category": data.get("category", "general")
     }
 
