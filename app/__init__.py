@@ -40,7 +40,23 @@ def create_app(config_name: str | None = None) -> Flask:
 
     @app.route("/docs/swagger.json")
     def serve_swagger_spec():
-        """Serve o arquivo estático da especificação OpenAPI / Swagger."""
+        """Serve o arquivo estático da especificação OpenAPI / Swagger, ocultando rotas de mutação na Vercel."""
+        spec_path = os.path.join(app.root_path, "static", "swagger.json")
+        is_vercel = os.getenv("VERCEL") == "1" or os.getenv("ENV") == "production" or os.getenv("FLASK_ENV") == "production"
+
+        if is_vercel:
+            import json
+            with open(spec_path, "r", encoding="utf-8") as f:
+                spec_data = json.load(f)
+
+            # Remove POST /api/cheats e DELETE /api/cheats/{id} na Vercel/produção
+            if "/api/cheats" in spec_data.get("paths", {}):
+                spec_data["paths"]["/api/cheats"].pop("post", None)
+            if "/api/cheats/{id}" in spec_data.get("paths", {}):
+                spec_data["paths"]["/api/cheats/{id}"].pop("delete", None)
+
+            return jsonify(spec_data)
+
         return send_from_directory(os.path.join(app.root_path, "static"), "swagger.json")
 
     # Registro de Blueprints da API

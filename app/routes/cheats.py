@@ -1,9 +1,20 @@
+import os
 from flask import Blueprint, jsonify, request
 from bson import ObjectId
 from bson.errors import InvalidId
 from app.db import get_cheats_collection
 
 cheats_bp = Blueprint("cheats", __name__)
+
+
+def is_read_only() -> bool:
+    """Verifica se a aplicação está em modo somente leitura (ex: deploy na Vercel ou produção)."""
+    return (
+        os.getenv("VERCEL") == "1"
+        or os.getenv("READ_ONLY", "").lower() in ("true", "1")
+        or os.getenv("FLASK_ENV") == "production"
+        or os.getenv("ENV") == "production"
+    )
 
 
 def format_cheat(doc: dict) -> dict:
@@ -40,7 +51,10 @@ def get_cheats():
 
 @cheats_bp.route("/cheats", methods=["POST"])
 def create_cheat():
-    """Cadastra um novo cheat na coleção 'cheats'."""
+    """Cadastra um novo cheat na coleção 'cheats' (desabilitado em produção/Vercel)."""
+    if is_read_only():
+        return jsonify({"error": "Operação não permitida em ambiente de produção/deploy"}), 403
+
     collection = get_cheats_collection()
     if collection is None:
         return jsonify({"error": "Banco de dados não disponível"}), 503
@@ -75,7 +89,10 @@ def create_cheat():
 
 @cheats_bp.route("/cheats/<string:cheat_id>", methods=["DELETE"])
 def delete_cheat(cheat_id: str):
-    """Exclui um cheat da coleção pelo ID."""
+    """Exclui um cheat da coleção pelo ID (desabilitado em produção/Vercel)."""
+    if is_read_only():
+        return jsonify({"error": "Operação não permitida em ambiente de produção/deploy"}), 403
+
     collection = get_cheats_collection()
     if collection is None:
         return jsonify({"error": "Banco de dados não disponível"}), 503
