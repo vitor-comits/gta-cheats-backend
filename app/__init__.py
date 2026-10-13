@@ -49,10 +49,11 @@ def create_app(config_name: str | None = None) -> Flask:
             with open(spec_path, "r", encoding="utf-8") as f:
                 spec_data = json.load(f)
 
-            # Remove POST /api/cheats e DELETE /api/cheats/{id} na Vercel/produção
+            # Remove métodos de mutação na Vercel/produção
             if "/api/cheats" in spec_data.get("paths", {}):
                 spec_data["paths"]["/api/cheats"].pop("post", None)
             if "/api/cheats/{id}" in spec_data.get("paths", {}):
+                spec_data["paths"]["/api/cheats/{id}"].pop("put", None)
                 spec_data["paths"]["/api/cheats/{id}"].pop("delete", None)
 
             return jsonify(spec_data)

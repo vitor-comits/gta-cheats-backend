@@ -1,3 +1,4 @@
+import re
 import os
 from flask import Blueprint, jsonify, request
 from bson import ObjectId
@@ -36,9 +37,9 @@ def get_cheats():
 
     query = {}
     if game_filter:
-        query["game"] = {"$regex": f"^{game_filter}$", "$options": "i"}
+        query["game"] = {"$regex": f"^{re.escape(game_filter.strip())}$", "$options": "i"}
     if category_filter:
-        query["category"] = {"$regex": f"^{category_filter}$", "$options": "i"}
+        query["category"] = {"$regex": f"^{re.escape(category_filter.strip())}$", "$options": "i"}
 
     cursor = collection.find(query)
     cheats = [format_cheat(doc) for doc in cursor]
@@ -85,6 +86,75 @@ def create_cheat():
         new_cheat.pop("_id")
 
     return jsonify(new_cheat), 201
+
+
+@cheats_bp.route("/cheats/<string:cheat_id>", methods=["GET"])
+def get_cheat_by_id(cheat_id: str):
+    """Busca um cheat específico pelo ObjectId ou custom_id."""
+    collection = get_cheats_collection()
+    if collection is None:
+        return jsonify({"error": "Banco de dados não disponível"}), 503
+
+    doc = None
+    try:
+        doc = collection.find_one({"_id": ObjectId(cheat_id)})
+    except InvalidId:
+        pass
+
+    if not doc and cheat_id.isdigit():
+        doc = collection.find_one({"custom_id": int(cheat_id)})
+
+    if not doc:
+        return jsonify({"error": "Cheat não encontrado"}), 404
+
+    return jsonify(format_cheat(doc)), 200
+
+
+@cheats_bp.route("/cheats/<string:cheat_id>", methods=["PUT", "PATCH"])
+def update_cheat(cheat_id: str):
+    """Atualiza dados de um cheat existente (para tela de edição)."""
+    if is_read_only():
+        return jsonify({"error": "Operação não permitida em ambiente de produção/deploy"}), 403
+
+    collection = get_cheats_collection()
+    if collection is None:
+        return jsonify({"error": "Banco de dados não disponível"}), 503
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Corpo da requisição deve ser um JSON válido"}), 400
+
+    # Campos que podem ser editados
+    allowed_fields = [
+        "game", "game_name", "title", "code_pc",
+        "code_playstation", "code_xbox", "code_phone", "category"
+    ]
+    update_data = {field: data[field] for field in allowed_fields if field in data}
+
+    if not update_data:
+        return jsonify({"error": "Nenhum campo fornecido para atualização"}), 400
+
+    query = None
+    try:
+        query = {"_id": ObjectId(cheat_id)}
+    except InvalidId:
+        pass
+
+    if query is None and cheat_id.isdigit():
+        query = {"custom_id": int(cheat_id)}
+
+    if not query:
+        return jsonify({"error": "ID inválido"}), 400
+
+    result = collection.update_one(query, {"$set": update_data})
+    if result.matched_count == 0:
+        return jsonify({"error": "Cheat não encontrado"}), 404
+
+    updated_doc = collection.find_one(query)
+    return jsonify({
+        "message": "Cheat atualizado com sucesso",
+        "cheat": format_cheat(updated_doc)
+    }), 200
 
 
 @cheats_bp.route("/cheats/<string:cheat_id>", methods=["DELETE"])

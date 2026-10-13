@@ -150,6 +150,59 @@
           }
         }
       },
+      "put": {
+        "tags": ["Cheats"],
+        "summary": "Atualiza os dados de um cheat pelo ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identificador do cheat (ObjectId ou custom_id)",
+            "schema": { "type": "string", "example": "66f00112233445566778899a" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CheatInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cheat atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Cheat atualizado com sucesso" },
+                    "cheat": { "$ref": "#/components/schemas/Cheat" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "404": {
+            "description": "Cheat não encontrado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
       "delete": {
         "tags": ["Cheats"],
         "summary": "Exclui um cheat pelo ID",
