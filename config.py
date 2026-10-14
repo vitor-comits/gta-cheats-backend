@@ -10,6 +10,9 @@ class Config:
     JSON_SORT_KEYS = False
     MONGODB_URI = os.getenv("MONGODB_URI", "")
     MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "gta")
+    ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
+    ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "gta-admin-secret-token-12345")
 
 
 class DevelopmentConfig(Config):

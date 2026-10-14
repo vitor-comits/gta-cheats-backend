@@ -63,9 +63,11 @@ def create_app(config_name: str | None = None) -> Flask:
     # Registro de Blueprints da API
     from app.routes.health import health_bp
     from app.routes.cheats import cheats_bp
+    from app.routes.auth import auth_bp
 
     app.register_blueprint(health_bp, url_prefix="/api")
     app.register_blueprint(cheats_bp, url_prefix="/api")
+    app.register_blueprint(auth_bp, url_prefix="/api")
 
     # Tratamento global de erros JSON
     @app.errorhandler(404)

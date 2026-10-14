@@ -4,18 +4,20 @@ from flask import Blueprint, jsonify, request
 from bson import ObjectId
 from bson.errors import InvalidId
 from app.db import get_cheats_collection
+from app.routes.auth import is_admin_token_valid
 
 cheats_bp = Blueprint("cheats", __name__)
 
 
-def is_read_only() -> bool:
-    """Verifica se a aplicação está em modo somente leitura (ex: deploy na Vercel ou produção)."""
-    return (
-        os.getenv("VERCEL") == "1"
-        or os.getenv("READ_ONLY", "").lower() in ("true", "1")
-        or os.getenv("FLASK_ENV") == "production"
-        or os.getenv("ENV") == "production"
-    )
+def check_admin_permission() -> bool:
+    """Verifica se a requisição possui credenciais válidas de administrador."""
+    token = None
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+    if not token:
+        token = request.headers.get("x-admin-key", "").strip()
+    return is_admin_token_valid(token)
 
 
 def format_cheat(doc: dict) -> dict:
@@ -52,9 +54,9 @@ def get_cheats():
 
 @cheats_bp.route("/cheats", methods=["POST"])
 def create_cheat():
-    """Cadastra um novo cheat na coleção 'cheats' (desabilitado em produção/Vercel)."""
-    if is_read_only():
-        return jsonify({"error": "Operação não permitida em ambiente de produção/deploy"}), 403
+    """Cadastra um novo cheat na coleção 'cheats' (exclusivo para administradores autenticados)."""
+    if not check_admin_permission():
+        return jsonify({"error": "Acesso não autorizado. Apenas administradores logados podem cadastrar cheats."}), 401
 
     collection = get_cheats_collection()
     if collection is None:
@@ -112,9 +114,9 @@ def get_cheat_by_id(cheat_id: str):
 
 @cheats_bp.route("/cheats/<string:cheat_id>", methods=["PUT", "PATCH"])
 def update_cheat(cheat_id: str):
-    """Atualiza dados de um cheat existente (para tela de edição)."""
-    if is_read_only():
-        return jsonify({"error": "Operação não permitida em ambiente de produção/deploy"}), 403
+    """Atualiza dados de um cheat existente (exclusivo para administradores autenticados)."""
+    if not check_admin_permission():
+        return jsonify({"error": "Acesso não autorizado. Apenas administradores logados podem editar cheats."}), 401
 
     collection = get_cheats_collection()
     if collection is None:
@@ -159,9 +161,9 @@ def update_cheat(cheat_id: str):
 
 @cheats_bp.route("/cheats/<string:cheat_id>", methods=["DELETE"])
 def delete_cheat(cheat_id: str):
-    """Exclui um cheat da coleção pelo ID (desabilitado em produção/Vercel)."""
-    if is_read_only():
-        return jsonify({"error": "Operação não permitida em ambiente de produção/deploy"}), 403
+    """Exclui um cheat da coleção pelo ID (exclusivo para administradores autenticados)."""
+    if not check_admin_permission():
+        return jsonify({"error": "Acesso não autorizado. Apenas administradores logados podem excluir cheats."}), 401
 
     collection = get_cheats_collection()
     if collection is None:
